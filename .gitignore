@@ -1,0 +1,21 @@
+# Ambiente virtual
+.venv/
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+
+# Imagens originais
+images/
+
+# Embeddings e metadados gerados
+data/
+
+# Resultados da clusterização
+output/
+
+# Modelos pré-treinados baixados
+models/*.onnx
+
+# Configurações locais e variáveis de ambiente
+.env
