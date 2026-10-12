@@ -11,7 +11,7 @@ def carregar_modelos():
         model=str(PASTA_MODELOS / "face_detection_yunet_2026may.onnx"),
         config="",
         input_size=(320, 320),
-        score_threshold=0.7,
+        score_threshold=0.9,
         nms_threshold=0.3,
     )
 
