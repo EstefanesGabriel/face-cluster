@@ -10,12 +10,10 @@ images/
 
 # Embeddings e metadados gerados
 data/
+resultados/
 
 # Resultados da clusterização
 output/
 
 # Modelos pré-treinados baixados
 models/*.onnx
-
-# Configurações locais e variáveis de ambiente
-.env

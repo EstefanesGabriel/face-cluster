@@ -1,49 +1,56 @@
 # Face Cluster
 
-Agrupamento de rostos em fotos usando OpenCV (YuNet e SFace) e HDBSCAN.
+Pipeline modular em 4 etapas para detecção e alinhamento facial (SCRFD 2.5G ONNX), extração de embeddings (SFace ONNX), clusterização (HDBSCAN) e visualização em HTML sem duplicar imagens no disco.
 
-## 1. Preparar o ambiente
+## 1. Execução Rápida
 
-Com Python instalado, abra o PowerShell na pasta do projeto. O ambiente usado no desenvolvimento é Python 3.14.
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install opencv-python==5.0.0.93 numpy==2.5.4 scikit-learn==1.9.1
-```
-
-Os comandos abaixo usam diretamente o Python do ambiente virtual, sem precisar ativá-lo.
-
-## 2. Adicionar os modelos e as imagens
-
-Baixe os modelos no OpenCV Zoo e coloque os arquivos `.onnx` na pasta `models/`, mantendo estes nomes:
-
-- [YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet): `face_detection_yunet_2026may.onnx`.
-- [SFace](https://github.com/opencv/opencv_zoo/tree/main/models/face_recognition_sface): `face_recognition_sface_2021dec.onnx`.
-
-No GitHub, abra o arquivo e use **Download raw file** para baixar o modelo.
-
-Coloque suas fotos em `images/`. Subpastas também são processadas. Os formatos aceitos são JPG, JPEG, PNG, BMP e WEBP.
-
-## 3. Processar os rostos
-
-Mantenha `PROCESSAR_TODAS = True` em `main.py` e execute:
+Com Python instalado, execute no PowerShell ou Prompt de Comando:
 
 ```powershell
-.\.venv\Scripts\python.exe main.py
+.\run.ps1
+```
+*(Ou dê dois cliques / execute `run.bat`)*
+
+---
+
+## 2. Configurando as Etapas e Limite de Imagens (`.env`)
+
+Edite o arquivo `.env` na raiz do projeto para escolher a pasta de entrada, qual etapa deseja rodar (`STEP`) e o limite opcional de imagens (`MAX_IMAGES`):
+
+```ini
+# Pasta contendo as imagens de entrada (dataset)
+INPUT_DIR=C:\Dev\celeba\input-clustering
+
+# Etapa a ser executada:
+# 1 ou detectar    = Etapa 1: Detecta e alinha as faces (salva resultados/faces.json e resultados/rostos_alinhados.npy)
+# 2 ou embedding   = Etapa 2: Gera os vetores descritores 128D (salva resultados/embeddings.npy)
+# 3 ou clusterizar = Etapa 3: Agrupa os embeddings (salva os caminhos em resultados/clusters.json)
+# 4 ou resultado   = Etapa 4: Gera e abre resultados/resultado.html no navegador
+# todas            = Executa as 4 etapas em sequência
+STEP=todas
+
+# Limite máximo de imagens a ler na Etapa 1 (0 = sem limite, processa todas da pasta)
+MAX_IMAGES=0
 ```
 
-Esse passo detecta os rostos e gera `data/faces.json` e `data/embeddings.npy`. Quando há faces detectadas, os arquivos anteriores são sobrescritos.
-
-## 4. Agrupar e exportar
+Você também pode passar a etapa diretamente via linha de comando:
 
 ```powershell
-.\.venv\Scripts\python.exe clustering.py
+.\.venv\Scripts\python.exe main.py detectar
+.\.venv\Scripts\python.exe main.py embedding
+.\.venv\Scripts\python.exe main.py clusterizar
+.\.venv\Scripts\python.exe main.py resultado
+.\.venv\Scripts\python.exe main.py todas
 ```
 
-Os resultados ficam em `output/pessoa_000/`, `output/pessoa_001/` e assim por diante. Cada pasta contém um rosto representativo e cópias das fotos originais completas. Faces sem grupo atribuído pelo HDBSCAN ficam em pastas individuais.
+---
 
-A cada exportação concluída, o conteúdo anterior de `output/` é substituído. Para testar outros parâmetros de clusterização, basta executar `clustering.py` novamente. Se mudar as imagens ou os modelos, execute primeiro `main.py`.
+## 3. Arquivos Leves Gerados em `resultados/`
 
-## Testar uma imagem
+Todos os artefatos são salvos na pasta `resultados/` (ignorada pelo Git), sem copiar as fotos originais:
 
-Em `main.py`, defina `PROCESSAR_TODAS = False` e ajuste `IMAGEM_ESPECIFICA` para o caminho da foto. Execute `main.py` para visualizar os rostos alinhados. Nesse modo, os arquivos de `data/` não são atualizados.
+- **`resultados/faces.json`**: metadados das imagens com exatamente 1 face válida detectada.
+- **`resultados/rostos_alinhados.npy`**: recortes `112x112x3` (`uint8`) alinhados pelos 5 pontos faciais, salvos sem perdas (*lossless*) e lidos via *memory-mapping* na Etapa 2.
+- **`resultados/embeddings.npy`**: matriz `(N, 128)` (`float32`) de vetores descritores faciais.
+- **`resultados/clusters.json`**: grupos gerados pelo HDBSCAN contendo apenas os caminhos para as imagens originais.
+- **`resultados/resultado.html`**: página leve com os clusters bem separados exibindo as fotos diretamente de seus caminhos originais (`file:///`).
